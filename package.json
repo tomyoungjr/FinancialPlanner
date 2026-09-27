@@ -1,0 +1,8 @@
+{
+  "name": "nonlinear-planner",
+  "private": true,
+  "description": "Personal retirement planner that tests the plan against regime changes and structural disruptions. Open index.html in a browser.",
+  "scripts": {
+    "test": "node --test tests/"
+  }
+}

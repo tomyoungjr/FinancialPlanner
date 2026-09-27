@@ -1,90 +1,61 @@
 # Nonlinear Planner
 
-A personal financial planner that doesn't assume the next 30 years will look like the last 30.
+A personal retirement planner that doesn't assume the next 30 years will look like the last 30.
 
-Most planners, including most Monte Carlo tools, pick one set of assumptions (average return,
-volatility, inflation) and roll them forward for decades. The randomness is real, but the
-*system* is treated as fixed. This planner runs your plan in two worlds side by side:
+It combines two designs:
 
-- **Linear world:** the classic assumption. One set of market statistics, forever.
-- **Nonlinear world:** the economy moves between regimes that last years, and structural
-  disruptions (Social Security cuts, means testing, UBI, universal healthcare, AI labor
-  displacement, fiscal crisis, higher capital taxes, longevity breakthroughs) can permanently
-  change the rules partway through your plan.
+- **TJ's Get FIREd planning model:** accounts by tax type, taxes and the early-withdrawal
+  penalty, required minimum distributions, spending by life stage, health costs that outpace
+  inflation, spending guardrails, an inheritance range, policy switches that each include
+  what pays for them, and a ranked list of "top moves".
+- **A nonlinear layer:** the economy moves between regimes that last for years (steady growth,
+  stagflation, deflationary bust, AI boom), and structural disruptions (Social Security cuts
+  and means testing, universal health care, UBI, AI job displacement, a debt crisis, higher
+  capital taxes, a longevity breakthrough) happen at *your* odds, cascade, and can move markets.
 
-Both worlds are calibrated to about the same long-run average returns, so the gap between
-them comes from the *shape* of the future, not from being more pessimistic.
+The headline compares the **classic plan** (one steady set of market statistics, today's law)
+with **your world**. Both are calibrated to about the same long-run returns, so the gap comes from
+the shape of the future, not from being more pessimistic.
 
-## Run it on your computer
+## Open it
 
-You need Python 3.10 or newer ([python.org/downloads](https://www.python.org/downloads/)).
+It's a single web page. There's nothing to install, no server, and no internet needed.
 
-```bash
-git clone https://github.com/tomyoungjr/FinancialPlanner.git
-cd FinancialPlanner
-python3 -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-streamlit run app.py
-```
+1. Download this repository: on GitHub click **Code → Download ZIP** and unzip it, or
+   `git clone https://github.com/tomyoungjr/FinancialPlanner.git`.
+2. Double-click **`index.html`**. It opens in your browser.
 
-Your browser opens to `http://localhost:8501`. Everything runs on your machine; nothing is uploaded.
+Your numbers go in the **Inputs** screen and are saved only in that browser on that computer.
+Use **Export** to keep a backup file; files ending in `.local.json` are ignored by git so they
+never end up on GitHub.
 
-For a quick text report without the browser: `python -m planner`
+On a phone, it lays out like an app with a tab bar along the bottom. **Hide $** scales every
+dollar figure by one hidden factor so you can show the screens to someone without showing
+your real amounts.
 
-## Make it yours
+## Screens
 
-1. **`config/household.yaml`**: your ages, assets, income, spending, Social Security, allocation.
-   Every number there now is a placeholder.
-2. **`config/world.yaml`**: your worldview. Odds and timing for each disruption, what each
-   one does, and the market regimes. This is the file worth arguing about.
-
-To keep your real numbers out of GitHub, copy `config/household.yaml` to
-`config/household.local.yaml` and put your real numbers there. The planner uses the
-`.local` file whenever it exists, and git ignores it.
-
-<!-- about -->
-## How it works
-
-**Each simulated future, year by year:**
-
-1. **Disruptions.** Each one has *your* odds of happening somewhere in a window of years.
-   Some make others more likely (`boosted_by`), so they cascade: AI job loss raises the
-   odds of UBI, and a debt crisis raises the odds of Social Security cuts. Once a disruption
-   happens, its effects are permanent.
-2. **Regime.** The economy is in one of four regimes: *steady growth*, *fiscal dominance /
-   stagflation*, *deflationary bust*, or *AI productivity boom*. Regimes tend to persist,
-   and disruptions can push the economy into one (a debt crisis forces 3 years of inflation).
-3. **Markets.** Returns and inflation are drawn from that regime's statistics, including
-   its stock/bond correlation. In the inflationary regime stocks and bonds fall *together*,
-   which is exactly when a 60/40 portfolio stops protecting you.
-4. **Cash flow.** Income (salary, Social Security, UBI) minus spending, healthcare, and taxes,
-   all adjusted by whatever disruptions have happened, determines the withdrawal.
-5. **Spending rule.** *Fixed* spends the same no matter what (the classic 4% rule).
-   *Guardrails* trims discretionary spending when the withdrawal rate drifts too high.
-
-**What "success" means:** the portfolio covers the gap every year through the end of the
-plan. The end date moves out if a longevity breakthrough happens.
-
-**What this is not:** a forecast or financial advice. The disruption odds are judgment
-calls. The point is to see which assumptions your plan is fragile to and which ones
-don't matter, then decide what to do about the fragile ones.
-
-**Known simplifications (good next steps):**
-- One blended tax rate instead of real brackets or account types (IRA/Roth/taxable)
-- Social Security changes applied uniformly; no spousal detail or claiming strategy
-- No house, mortgage, annuity, or long-term care modeling
-- Disruption effects switch on all at once rather than phasing in
-<!-- /about -->
+| Screen | The question it answers |
+|---|---|
+| Plan | Will the money last, in the classic plan and in your world? |
+| Scenarios | What if a specific law passes? Each switch alone and in combination, through identical markets. |
+| Your world | Your odds for each disruption, which ones the plan is fragile to, stress tests, and the regime you retire into |
+| Moves | Which changes raise the odds most, measured one at a time |
+| Inputs | Your household |
+| How it works | The model, its principles, and its simplifications |
 
 ## Project layout
 
 ```
-app.py                 web interface (Streamlit)
-planner/simulate.py    Monte Carlo engine: regimes + disruptions + cash flows
-planner/analysis.py    summaries, disruption attribution, regime analysis
-planner/config.py      loads and checks the YAML files
-config/household.yaml  your situation
-config/world.yaml      your worldview
-tests/                 run with: pytest
+index.html          the page and its styles
+js/defaults.js      placeholder household, policy switches, regimes and disruptions
+js/engine.js        the planning math (no AI, no network)
+js/charts.js        small SVG charts
+js/app.js           screens and inputs
+tests/              engine tests: node --test tests/  (or npm test)
 ```
+
+To change the model itself (new disruptions, different regimes), edit `js/defaults.js`, or
+open this folder in Claude Code and ask.
+
+This is a tool for testing your thinking, not a forecast or financial advice.

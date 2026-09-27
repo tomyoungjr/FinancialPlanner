@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Nonlinear Planner</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232a78d6'/%3E%3Cpath d='M5 22 C11 22 12 9 17 12 S23 22 27 7' stroke='white' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f6f5f2;
+  --surface: #fcfcfb;
+  --surface-2: #f0efec;
+  --border: #e2e0da;
+  --grid: #e8e6e1;
+  --text: #0b0b0b;
+  --text-2: #52514e;
+  --text-3: #7a7873;
+  --accent: #2a78d6;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --pos: #2a78d6;
+  --neg: #e34948;
+  --warn-bg: #fff4e0;
+  --warn-text: #7a4b00;
+  --shadow: 0 1px 2px rgba(0,0,0,.05), 0 1px 1px rgba(0,0,0,.03);
+  --radius: 12px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #121211; --surface: #1a1a19; --surface-2: #232321; --border: #333331; --grid: #2b2b29;
+    --text: #ffffff; --text-2: #c3c2b7; --text-3: #92918a;
+    --accent: #3987e5; --series-1: #3987e5; --series-2: #d95926; --pos: #3987e5; --neg: #e66767;
+    --warn-bg: #3a2c10; --warn-text: #f3c77a;
+    --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #121211; --surface: #1a1a19; --surface-2: #232321; --border: #333331; --grid: #2b2b29;
+  --text: #ffffff; --text-2: #c3c2b7; --text-3: #92918a;
+  --accent: #3987e5; --series-1: #3987e5; --series-2: #d95926; --pos: #3987e5; --neg: #e66767;
+  --warn-bg: #3a2c10; --warn-text: #f3c77a;
+  --shadow: none;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--text); font: 15px/1.5 var(--font); -webkit-font-smoothing: antialiased; }
+header.top {
+  position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(8px); border-bottom: 1px solid var(--border);
+}
+.top-inner { max-width: 1120px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 16px; }
+.brand { font-weight: 700; font-size: 17px; letter-spacing: -.01em; white-space: nowrap; }
+nav.tabs { display: flex; gap: 2px; flex: 1; overflow-x: auto; }
+nav.tabs button {
+  appearance: none; border: 0; background: none; color: var(--text-2); font: inherit; font-size: 14px;
+  padding: 7px 12px; border-radius: 8px; cursor: pointer; white-space: nowrap;
+}
+nav.tabs button:hover { background: var(--surface-2); color: var(--text); }
+nav.tabs button[aria-selected="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow); font-weight: 600; }
+nav.tabs .ico { display: none; }
+.hide-toggle { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); white-space: nowrap; cursor: pointer; }
+.status { font-size: 12px; color: var(--text-3); min-width: 80px; text-align: right; white-space: nowrap; }
+
+main { max-width: 1120px; margin: 0 auto; padding: 20px 16px 96px; }
+section.screen { display: none; }
+section.screen.active { display: block; }
+h1 { font-size: 24px; letter-spacing: -.02em; margin: 4px 0 4px; }
+h2 { font-size: 17px; margin: 28px 0 8px; }
+.lede { color: var(--text-2); margin: 0 0 18px; max-width: 760px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.tile .label { font-size: 13px; color: var(--text-2); }
+.tile .value { font-size: 30px; font-weight: 650; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.2; margin-top: 4px; }
+.tile .sub { font-size: 13px; color: var(--text-3); margin-top: 2px; }
+.key { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: 0; }
+.delta-neg { color: var(--neg); } .delta-pos { color: var(--pos); }
+.note { font-size: 13px; color: var(--text-2); background: var(--surface-2); border-radius: 10px; padding: 10px 12px; margin: 12px 0; }
+.warn { background: var(--warn-bg); color: var(--warn-text); border-radius: 10px; padding: 10px 12px; margin: 12px 0; font-size: 14px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; font-weight: 600; font-size: 12px; color: var(--text-2); padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+td { padding: 8px 10px; border-bottom: 1px solid var(--grid); vertical-align: middle; }
+tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.table-wrap { overflow-x: auto; }
+tr.top5 td:nth-child(2) { font-weight: 600; }
+tr.baseline td { font-weight: 600; background: var(--surface-2); }
+.muted { color: var(--text-3); font-size: 13px; }
+.bar-cell { width: 180px; min-width: 120px; }
+.dbar { position: relative; height: 14px; }
+.dbar .zero { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--text-3); }
+.dbar .fill { position: absolute; top: 2px; height: 10px; }
+.dbar .fill.pos { left: 50%; background: var(--pos); border-radius: 0 4px 4px 0; }
+.dbar .fill.neg { right: 50%; background: var(--neg); border-radius: 4px 0 0 4px; }
+
+input[type=number], input[type=text], select {
+  font: inherit; font-size: 14px; color: var(--text); background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 8px; width: 100%; font-variant-numeric: tabular-nums;
+}
+input[type=number]:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+td input[type=number] { width: 96px; }
+input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--accent); }
+button.btn {
+  font: inherit; font-size: 14px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  border-radius: 8px; padding: 7px 12px; cursor: pointer;
+}
+button.btn:hover { background: var(--surface-2); }
+button.btn.primary { background: var(--accent); color: #fff; border-color: transparent; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.seg { display: inline-flex; background: var(--surface-2); border-radius: 9px; padding: 3px; gap: 2px; }
+.seg button { border: 0; background: none; font: inherit; font-size: 13px; padding: 5px 10px; border-radius: 7px; color: var(--text-2); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow); font-weight: 600; }
+
+.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.form-grid fieldset { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 12px 14px 14px; margin: 0; }
+.form-grid legend { font-weight: 650; padding: 0 4px; font-size: 14px; }
+.field { display: grid; grid-template-columns: 1fr 130px; gap: 8px; align-items: center; margin-top: 8px; }
+.field label { font-size: 13px; color: var(--text-2); }
+.field .help { grid-column: 1 / -1; font-size: 12px; color: var(--text-3); margin-top: -4px; }
+
+/* chart */
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart .axis text { fill: var(--text-3); font-size: 11px; font-family: var(--font); }
+.chart .gridline { stroke: var(--grid); stroke-width: 1; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--text-2); margin-bottom: 6px; }
+.legend .line-key { display: inline-block; width: 16px; height: 2px; vertical-align: middle; margin-right: 6px; border-radius: 1px; }
+.tooltip {
+  position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.12); min-width: 170px; display: none; z-index: 5;
+}
+.tooltip .tt-title { font-weight: 650; margin-bottom: 4px; color: var(--text); }
+.tooltip .tt-row { display: flex; justify-content: space-between; gap: 12px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.prose { max-width: 760px; }
+.prose h2 { margin-top: 24px; }
+.prose li { margin: 4px 0; }
+details summary { cursor: pointer; color: var(--text-2); font-size: 13px; margin-top: 8px; }
+.effects { font-size: 12px; color: var(--text-3); }
+
+/* phone: bottom tab bar like an app */
+@media (max-width: 760px) {
+  header.top { backdrop-filter: none; background: var(--bg); }
+  .top-inner { flex-wrap: wrap; gap: 8px; }
+  .brand { flex: 1; }
+  nav.tabs {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 20; justify-content: space-around;
+    background: var(--surface); border-top: 1px solid var(--border); padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+  }
+  nav.tabs button { display: flex; flex-direction: column; align-items: center; font-size: 10px; padding: 4px 6px; gap: 2px; }
+  nav.tabs button[aria-selected="true"] { box-shadow: none; background: none; color: var(--accent); }
+  nav.tabs .ico { display: block; width: 22px; height: 22px; }
+  .tile .value { font-size: 26px; }
+  .field { grid-template-columns: 1fr 120px; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">Nonlinear Planner</div>
+    <nav class="tabs" role="tablist" id="tabs"></nav>
+    <label class="hide-toggle" title="Scales every dollar figure by one hidden factor, so the app can be shown to someone else. Shapes and percentages stay real.">
+      <input type="checkbox" id="hideMoney"> Hide $
+    </label>
+    <span class="status" id="status" aria-live="polite"></span>
+  </div>
+</header>
+
+<main>
+  <section class="screen" id="screen-plan">
+    <h1>Will the money last?</h1>
+    <p class="lede">The same plan run two ways: the <b>classic plan</b> assumes one steady set of market statistics and today's law for decades.
+      <b>Your world</b> lets the economy change regimes and the rules themselves change, at the odds you set.</p>
+    <div class="tiles" id="planTiles"></div>
+    <div class="card">
+      <div id="planChart"></div>
+      <details><summary>Show as a table</summary><div class="table-wrap" id="planChartTable"></div></details>
+    </div>
+    <h2>At a glance</h2>
+    <div class="card table-wrap" id="planTable"></div>
+    <p class="note">Both worlds have about the same long-run average returns (checked on the Your World screen). The gap comes from <i>how</i> returns arrive:
+      regimes that last for years, stocks and bonds falling together, and permanent changes to income, costs and taxes.</p>
+  </section>
+
+  <section class="screen" id="screen-scenarios">
+    <h1>Policy scenarios</h1>
+    <p class="lede">What happens to the plan if a specific law passes? No odds here: each switch simply turns on in its year, and each one includes what pays for it.
+      Every row runs through the <b>same market histories</b>, so any difference between rows comes from the policy, not luck.</p>
+    <div class="row" style="margin-bottom:12px">
+      <span class="muted">Markets:</span>
+      <div class="seg" id="scenarioMarket">
+        <button data-v="linear">Steady statistics</button>
+        <button data-v="regimes">Regimes</button>
+      </div>
+    </div>
+    <div class="card table-wrap" id="switchTable"></div>
+    <h2>Results</h2>
+    <div class="card table-wrap" id="scenarioTable"></div>
+    <p class="note">The switches change cash flows only, never markets. That keeps each row checkable. Your World is where policies are allowed to move markets and where odds live.</p>
+  </section>
+
+  <section class="screen" id="screen-world">
+    <h1>Your world</h1>
+    <p class="lede">A 30-year plan built on one set of assumptions is linear thinking. This screen is your assessment of how the foundations could shift:
+      your odds that each change happens inside a window of years. Some make others more likely (AI job loss raises the odds of UBI; a debt crisis raises the odds of Social Security cuts).
+      The odds are opinions, so they are shown here in the open rather than buried in one number.</p>
+    <div class="card table-wrap" id="disruptionTable"></div>
+    <h2>What hurts this plan most</h2>
+    <div class="card table-wrap" id="attributionTable"></div>
+    <p class="note">Read with care: disruptions cascade, so their effects overlap. A large gap means the plan is fragile to that assumption. That's where to focus.</p>
+
+    <h2>Stress test</h2>
+    <div class="card">
+      <div class="row">
+        <select id="stressPick" style="width:auto"></select>
+        <span class="muted">in</span>
+        <input type="number" id="stressYear" style="width:100px">
+        <button class="btn primary" id="stressRun">Run</button>
+      </div>
+      <div id="stressOut" style="margin-top:12px"></div>
+    </div>
+
+    <h2>The regime you retire into</h2>
+    <div class="card table-wrap" id="regimeOutcomes"></div>
+    <h2>Fairness check: long-run averages</h2>
+    <div class="card table-wrap" id="fairness"></div>
+    <details><summary>Regime details</summary><div class="card table-wrap" id="regimeDetails" style="margin-top:8px"></div></details>
+  </section>
+
+  <section class="screen" id="screen-moves">
+    <h1>Top moves</h1>
+    <p class="lede">The code tries each change one at a time, through the same markets, and measures how much it raises the chance the money lasts.
+      They are ranked by the measured change in <b>your world</b>. A move that helps a lot in your world but not in the classic plan is protection against the future you're worried about.</p>
+    <div class="card table-wrap" id="movesTable"></div>
+    <p class="note">This tool advises only. Every decision is yours. Questions about taxes, trusts or estates belong with a CPA or an estate attorney.</p>
+  </section>
+
+  <section class="screen" id="screen-inputs">
+    <h1>Your household</h1>
+    <p class="lede">All dollar amounts in today's dollars. Your numbers are saved <b>only in this browser on this computer</b>. Nothing is sent anywhere.
+      Use Export to keep a backup file (it's named <code>.local.json</code> so git ignores it).</p>
+    <div class="row" style="margin-bottom:12px">
+      <button class="btn" id="exportBtn">Export</button>
+      <button class="btn" id="importBtn">Import</button>
+      <input type="file" id="importFile" accept=".json,application/json" hidden>
+      <button class="btn" id="resetBtn">Reset to placeholders</button>
+    </div>
+    <div id="inputWarn"></div>
+    <form class="form-grid" id="inputForm" onsubmit="return false"></form>
+  </section>
+
+  <section class="screen" id="screen-about">
+    <div class="prose" id="aboutText">
+      <h1>How it works</h1>
+      <p class="lede">A personal planner that doesn't assume the next 30 years will look like the last 30. It combines TJ's Get FIREd planning model with a nonlinear layer for regime changes and structural disruptions.</p>
+
+      <h2>Three layers</h2>
+      <ol>
+        <li><b>The household model</b> (from Get FIREd). Accounts by tax type (cash, brokerage, pre-tax, Roth), taxes on pay and withdrawals,
+          the 10% penalty before 59½, required minimum distributions, spending by life stage, health costs that outpace inflation,
+          an inheritance entered as a range and left out of the headline, and spending guardrails that report how often and how deeply you'd cut back.</li>
+        <li><b>Policy scenarios</b> (from Get FIREd). Switches for specific laws, each with what pays for it, run side by side through identical markets.
+          No odds, and no effect on markets, so every difference is checkable.</li>
+        <li><b>Your world</b> (the nonlinear layer). The economy moves between regimes that last for years (steady growth, stagflation, deflationary bust, AI boom),
+          each with its own returns, inflation and stock/bond correlation. Disruptions happen at your odds, can cascade, and may move markets.
+          This is where a 60/40 portfolio with a 4% draw gets tested against a world that isn't linear.</li>
+      </ol>
+
+      <h2>Each simulated year</h2>
+      <ol>
+        <li>Disruptions that happen this year take effect permanently.</li>
+        <li>The economy lands in a regime; returns and inflation are drawn together from it.</li>
+        <li>Income (pay, Social Security, UBI, part-time) comes in, taxed; spending, health care, VAT and wealth tax go out.</li>
+        <li>The gap is withdrawn: cash first, then brokerage, then pre-tax and Roth (Roth before pre-tax until 59½ to avoid the penalty). Required distributions come out regardless.</li>
+        <li>With guardrails on, discretionary spending is trimmed 10% whenever the withdrawal rate drifts 20% above where retirement started, and raised 5% when it drifts 20% below.</li>
+      </ol>
+      <p><b>Success</b> means every year's spending was covered through the end of the plan. The end moves out if a longevity breakthrough happens.</p>
+
+      <h2>Principles (kept from Get FIREd)</h2>
+      <ul>
+        <li><b>It only advises.</b> It computes, simulates and flags. Nothing in it can move money.</li>
+        <li><b>It runs at home.</b> A single web page opened from your own computer. No server, no account, no internet needed. Your numbers stay in this browser.</li>
+        <li><b>No personal details in the code.</b> The code holds placeholders; your numbers live in the browser and in export files that git ignores.</li>
+        <li><b>Plain math, checkable.</b> Every number comes from ordinary code with tests. If an AI helps later, it explains results; it doesn't do the math.</li>
+        <li><b>A range, not a promise.</b> Inheritance is left out of the headline unless you include it.</li>
+      </ul>
+
+      <h2>Where the two models differ, on purpose</h2>
+      <ul>
+        <li>Get FIREd deliberately keeps policies from moving markets and assigns no odds, to stay simple and checkable. The Scenarios screen keeps that discipline.</li>
+        <li>Your World deliberately does both: it lets a debt crisis force years of inflation and AI shift the odds of a boom or a bust, and it puts your odds in the open.
+          The two screens answer different questions: "what if this law passes?" and "what do I actually believe about the next 30 years?"</li>
+      </ul>
+
+      <h2>Simplifications (good next steps)</h2>
+      <ul>
+        <li>One blended ordinary tax rate instead of brackets; no state-specific rules or Roth conversions.</li>
+        <li>Social Security is one household figure; no spousal or survivor detail.</li>
+        <li>No house, mortgage, annuity or long-term-care modeling.</li>
+        <li>Replaying real market history (1928 onward) is a planned alternative to the random draws.</li>
+        <li>Account feeds (Plaid, statements), transaction sorting and the ledger from Get FIREd are not part of this planner.</li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script src="js/defaults.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

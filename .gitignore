@@ -1,6 +1,5 @@
-__pycache__/
-*.pyc
-.venv/
-.pytest_cache/
-*.local.yaml
-.streamlit/secrets.toml
+# Personal numbers exported from the app never go to GitHub
+*.local.json
+*.local.*
+node_modules/
+.DS_Store
