@@ -26,5 +26,5 @@ markets and structural disruptions at the owner's odds.
 - The owner is not a programmer. Explain changes in plain language.
 
 ## Commands
-- `node --test tests/` (or `npm test`): engine tests
+- `node --test` (or `npm test`): engine tests
 - Open `index.html` in a browser to use it

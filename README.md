@@ -52,7 +52,7 @@ js/defaults.js      placeholder household, policy switches, regimes and disrupti
 js/engine.js        the planning math (no AI, no network)
 js/charts.js        small SVG charts
 js/app.js           screens and inputs
-tests/              engine tests: node --test tests/  (or npm test)
+tests/              engine tests: node --test  (or npm test)
 ```
 
 To change the model itself (new disruptions, different regimes), edit `js/defaults.js`, or

@@ -1,4 +1,4 @@
-// Run with: node --test tests/
+// Run with: node --test
 const test = require('node:test');
 const assert = require('node:assert');
 const E = require('../js/engine.js');
