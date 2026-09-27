@@ -1,0 +1,47 @@
+# Your household. Every number here is a PLACEHOLDER. Replace with your own.
+# All dollar amounts are in today's dollars (the model adjusts for inflation).
+
+start_year: 2026
+current_age: 60
+retirement_age: 65
+plan_to_age: 95
+
+portfolio: 2500000            # total investable assets today
+
+# Income before retirement
+earned_income: 150000         # household pre-tax earned income per year
+pre_retirement_spending: 110000
+
+# Spending in retirement, split so the model knows what can flex in bad times
+essential_spending: 60000     # housing, food, insurance: hard to cut
+discretionary_spending: 25000 # travel, gifts, projects: can be cut
+
+# Healthcare modeled separately because policy changes hit it directly
+healthcare_cost: 15000        # household per year, today's dollars
+healthcare_real_growth: 0.02  # how much faster than CPI healthcare costs rise
+
+# Social Security (scheduled benefit, from your ssa.gov statement)
+social_security_benefit: 42000  # household per year, today's dollars
+social_security_age: 67
+
+other_income: 0               # pensions, rentals, etc. (real, per year)
+
+effective_tax_rate: 0.18      # blended rate on income + withdrawals (simplification)
+
+# Portfolio mix, rebalanced every year. Must sum to 1.0
+allocation:
+  equities: 0.60
+  bonds: 0.40
+  real_assets: 0.00           # TIPS, gold, commodities, real estate
+  cash: 0.00
+
+# How spending responds to markets in retirement:
+#   fixed      - spend the same real amount no matter what (the classic "4% rule" behavior)
+#   guardrails - cut discretionary spending when the withdrawal rate drifts too high, raise it when low
+strategy: guardrails
+guardrails:
+  band: 0.20        # act when withdrawal rate moves 20% away from where it started
+  cut: 0.10         # cut discretionary spending 10% per step
+  raise: 0.05       # raise it 5% per step
+  min_discretionary: 0.30   # never cut discretionary below 30% of plan
+  max_discretionary: 1.30
